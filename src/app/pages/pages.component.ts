@@ -1,9 +1,8 @@
 import {AfterViewInit, Compiler, Component, NgModule, OnInit, ViewChild, ViewContainerRef} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {ActivatedRoute} from '@angular/router';
-import { STYLE_MAPPING } from './style-mappings-new';
+import { STYLE_MAPPING } from './style-mappings';
 import {ElementType} from './element-types';
-import {isStringLiteralLike} from 'codelyzer/util/utils';
 // import {ConfigService, LoggingService} from "as-ng-common-services/dist";
 
 @Component({
@@ -46,10 +45,12 @@ export class PagesComponent implements OnInit, AfterViewInit {
       // Must clear cache.
       this.compiler.clearCache();
 
+      // setting up main container styles
       const pageSettings = this.pages[0].pageSettings;
       const mainPageId = 'main';
       this.setFixedStyles();
       this.setVariableStyles(pageSettings.variable, mainPageId);
+      this.pageStyles += `.page-container {height: ${this.pages[0].resolution.y}px; width: ${this.pages[0].resolution.x}px}`;
 
       // Define the component using Component decorator.
       const component = Component({
@@ -168,6 +169,7 @@ export class PagesComponent implements OnInit, AfterViewInit {
       finalPage += '</div>';
 
       console.log(this.pageStyles)
+
       resolve(finalPage);
     });
   }
@@ -212,7 +214,6 @@ export class PagesComponent implements OnInit, AfterViewInit {
     }
 
     styles += '} \n';
-    console.log(styles);
     this.pageStyles += styles;
   }
 
