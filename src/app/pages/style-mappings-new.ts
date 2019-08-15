@@ -1,30 +1,8 @@
 export const STYLE_MAPPING = {
-  PBRC: {
-    style: 'background-color',
-    prefix:  'rgb(',
-    suffix:  ')'
-  },
-  URGC: {
-    style: 'background-color',
-    prefix:  'rgb(',
-    suffix:  ')'
-  },
-  TFRC: {
-    style: 'color',
-    prefix:  'rgb(',
-    suffix:  ')'
-  },
-  TFON: {
-    style: 'font-family'
-  },
-  TBRC: {
-    style: 'background-color',
-    prefix:  'rgb(',
-    suffix:  ')'
-  },
-  TFSZ: {
-    style: 'font-size',
-    suffix: 'px'
-  },
-  OSVC: ``
+  PBRC: `background-color: rgb({{v}},{{v}},{{v}});`,
+  URGC: `background-color: rgb({{v}},{{v}},{{v}});`,
+  TFRC: `color: rgb({{v}},{{v}},{{v}});`,
+  TFON: `font-family:{{v}};`,
+  TBRC: `background-color: rgb({{v}},{{v}},{{v}});`,
+  TFSZ: `font-size: {{v}}px`,
 };
