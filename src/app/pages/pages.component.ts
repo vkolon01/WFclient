@@ -168,8 +168,6 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
       finalPage += '</div>';
 
-      console.log(this.pageStyles)
-
       resolve(finalPage);
     });
   }
@@ -185,14 +183,26 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
   setFixedStyles(): void {
     const defaultStyles = `
-    div { display: flex; }
+    div { 
+      display: flex;
+      color: white;
+      box-sizing: border-box;
+      border-width: 6px;
+      font-size: 30px;
+      font-family: Arial;
+    }
     .TFBD { font-weight: bold; }
+    .TFTS { font-style: italic; }
+    .TFUL { text-decoration: underline; }
     .OSVT { align-items: flex-start; }
     .OSVC { align-items: center; }
     .OSVB { align-items: flex-end; }
     .OSHL { justify-content: flex-start; }
     .OSHC { justify-content: center; }
     .OSHR { justify-content: flex-end; }
+    .BSOS { border-style: outset }
+    .BSIS { border-style: inset }
+    .BSSO { border-style: solid }
     `;
 
     this.pageStyles += defaultStyles;
