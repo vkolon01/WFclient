@@ -24,7 +24,6 @@ export class PagesComponent implements OnInit, AfterViewInit {
   UNUSED = ElementType[ElementType.U];
   MOVIE = ElementType[ElementType.M];
 
-  private testImage;
   constructor(
     private route: ActivatedRoute,
     private http: HttpClient,
@@ -116,10 +115,11 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
 
       // setup static elements
+      await this.asyncForEach(this.pages[0].staticElements, async (element) => {
 
-      await this.asyncForEach(this.pages[0].staticElements, async(element) => {
+        const fixedElement = document.createElement('div');
+
         const curId = `el${this.idCounter++}`;
-
         const height = element.resolution.bottom - element.resolution.top;
         const width = element.resolution.right - element.resolution.left;
 
@@ -129,7 +129,10 @@ export class PagesComponent implements OnInit, AfterViewInit {
         curResolution += `height: ${height}px; `;
         curResolution += `width: ${width}px;`;
 
-        const curClasses = this.generateStyleClasses(element.settings);
+        let curClasses;
+        if (element.settings && element.settings.fixed && element.settings.fixed.length > 0) {
+          curClasses = element.settings.fixed;
+        }
         this.setVariableStyles(element.settings.variable, curId);
 
         let content;
@@ -137,23 +140,35 @@ export class PagesComponent implements OnInit, AfterViewInit {
           switch (element.body.type) {
             case this.TEXT: {
               if (element.body.content) {
-                content = element.body.content;
+                content = document.createTextNode(element.body.content);
+                fixedElement.appendChild(content);
               }
               break;
             }
             case this.IMAGE: {
               const image = new Image();
               try {
-                image.src = await this.getImage(element.body.content);
-                this.testImage = image;
-                content = image;
+                image.src = `data:image/png;base64, ${await this.getImage(element.body.content)}`;
+                image.setAttribute('style', 'width: inherit;');
+                fixedElement.appendChild(image);
               } catch (e) {
 
               }
             }
           }
         }
-        staticElementList.push(`<div id="${curId}" class="${curClasses}" style="${curResolution}">  ${content} </div>`);
+
+        fixedElement.setAttribute('style', curResolution);
+        if (curClasses) {
+          curClasses.forEach(elementClass => {
+            if (elementClass) {
+              fixedElement.classList.add(elementClass);
+            }
+          })
+        }
+        fixedElement.id = curId;
+
+        staticElementList.push(fixedElement);
       });
 
       // setup multiline elements
@@ -161,34 +176,45 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
         const height = element.resolution.bottom - element.resolution.top;
         const width = element.resolution.right - element.resolution.left;
-        const backgroundColour = 'yellow';
         const multilineSettings = this.pages[0].multilineSettings;
+
+        let curResolution = `margin-left: ${element.resolution.left}px; `;
+        curResolution += `height: ${height}px; `;
+        curResolution += `position: absolute; `;
+        curResolution += `width: ${width}px;`;
+        curResolution += 'background-color: yellow;'; // temporary
+        curResolution += 'opacity: 0.5;'; // temporary
+
 
         // if multiline settings are passed
         if (multilineSettings && multilineSettings.margin && multilineSettings.numOfElements) {
 
           for (let i = 0; i < multilineSettings.numOfElements; i++) {
+            const multilineElement = document.createElement('div');
             const marginTop = element.resolution.top + (multilineSettings.margin * i);
-            multilineElementList.push(`<div style="margin-left: ${element.resolution.left}px; margin-top: ${marginTop}px; position: absolute; height: ${height}px; width: ${width}px; background-color: ${backgroundColour}; opacity: 0.5;">  </div>`);
+            multilineElement.setAttribute('style', curResolution + `margin-top: ${marginTop}px;`);
+            multilineElementList.push(multilineElement);
           }
         } else {
-          multilineElementList.push(`<div style="margin-left: ${element.resolution.left}px; margin-top: ${element.resolution.top}px; position: absolute; height: ${height}px; width: ${width}px; background-color: ${backgroundColour}; opacity: 0.5;">  </div>`);
+          const multilineElement = document.createElement('div');
+          multilineElement.setAttribute('style', curResolution + `margin-top: ${element.resolution.top}px;`);
+          multilineElementList.push(multilineElement);
         }
       });
 
-      let finalPage = '<div id="main" class="page-container">';
+      const finalPage = document.createElement('div');
+      finalPage.id = 'main';
+      finalPage.className = 'page-container';
 
       staticElementList.forEach(element => {
-        finalPage += element;
+        finalPage.appendChild(element);
       });
 
       multilineElementList.forEach(element => {
-        finalPage += element;
+        finalPage.appendChild(element);
       });
 
-      finalPage += '</div>';
-      console.log(finalPage);
-      resolve(finalPage);
+      resolve(finalPage.outerHTML);
     });
   }
 
