@@ -3,7 +3,6 @@ import {HttpClient} from '@angular/common/http';
 import {ActivatedRoute} from '@angular/router';
 import { STYLE_MAPPING } from './style-mappings';
 import {ElementType} from './element-types';
-// import {ConfigService, LoggingService} from "as-ng-common-services/dist";
 
 @Component({
   selector: 'app-pages',
@@ -25,6 +24,7 @@ export class PagesComponent implements OnInit, AfterViewInit {
   UNUSED = ElementType[ElementType.U];
   MOVIE = ElementType[ElementType.M];
 
+  private testImage;
   constructor(
     private route: ActivatedRoute,
     private http: HttpClient,
@@ -48,7 +48,7 @@ export class PagesComponent implements OnInit, AfterViewInit {
       // setting up main container styles
       const pageSettings = this.pages[0].pageSettings;
       const mainPageId = 'main';
-      this.setFixedStyles();
+      this.setDefaultStyles();
       this.setVariableStyles(pageSettings.variable, mainPageId);
       this.pageStyles += `.page-container {height: ${this.pages[0].resolution.y}px; width: ${this.pages[0].resolution.x}px}`;
 
@@ -101,43 +101,63 @@ export class PagesComponent implements OnInit, AfterViewInit {
     }
   }
 
+  async asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array);
+    }
+  }
+
   generateTemplate(): Promise<string> {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
       const staticElementList = [];
       const multilineElementList = [];
 
 
       // setup static elements
-      this.pages[0].staticElements.forEach( element => {
 
+      await this.asyncForEach(this.pages[0].staticElements, async(element) => {
         const curId = `el${this.idCounter++}`;
 
         const height = element.resolution.bottom - element.resolution.top;
         const width = element.resolution.right - element.resolution.left;
 
-        const curResolution = `margin-left: ${element.resolution.left}px; margin-top: ${element.resolution.top}px; position: absolute; height: ${height}px; width: ${width}px;`;
+        let curResolution = `margin-left: ${element.resolution.left}px; `;
+        curResolution += `margin-top: ${element.resolution.top}px; `;
+        curResolution += `position: absolute; `;
+        curResolution += `height: ${height}px; `;
+        curResolution += `width: ${width}px;`;
 
         const curClasses = this.generateStyleClasses(element.settings);
         this.setVariableStyles(element.settings.variable, curId);
 
-        let content = '';
+        let content;
         if (element.body) {
           switch (element.body.type) {
             case this.TEXT: {
               if (element.body.content) {
                 content = element.body.content;
               }
+              break;
+            }
+            case this.IMAGE: {
+              const image = new Image();
+              try {
+                image.src = await this.getImage(element.body.content);
+                this.testImage = image;
+                content = image;
+              } catch (e) {
+
+              }
             }
           }
         }
-
         staticElementList.push(`<div id="${curId}" class="${curClasses}" style="${curResolution}">  ${content} </div>`);
       });
 
       // setup multiline elements
-      this.pages[0].multilineElements.forEach( element => {
+      this.pages[0].multilineElements.forEach(element => {
 
         const height = element.resolution.bottom - element.resolution.top;
         const width = element.resolution.right - element.resolution.left;
@@ -167,7 +187,7 @@ export class PagesComponent implements OnInit, AfterViewInit {
       });
 
       finalPage += '</div>';
-
+      console.log(finalPage);
       resolve(finalPage);
     });
   }
@@ -181,11 +201,12 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
   }
 
-  setFixedStyles(): void {
+  setDefaultStyles(): void {
     const defaultStyles = `
     div { 
       display: flex;
       color: white;
+      background-color: black;
       box-sizing: border-box;
       border-width: 6px;
       font-size: 30px;
@@ -229,11 +250,17 @@ export class PagesComponent implements OnInit, AfterViewInit {
 
   async getPage(): Promise<any> {
     // return this.http.get(this.config.getServiceUrl('page-service', 'pages'))
-    let url = 'http://localhost:3001/pages';
+    let url = 'http://localhost:3001/pages/';
     if (this.pageNumber) {
-      url += `/${this.pageNumber}`;
+      url += `${this.pageNumber}`;
     }
     return await this.http.get(url).toPromise();
+  }
+
+  async getImage(imageName): Promise<any> {
+    const url = 'http://localhost:8202/v1/api/getImage?imageName=';
+
+    return await this.http.get(url + imageName).toPromise();
   }
 
 }
